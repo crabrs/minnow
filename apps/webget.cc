@@ -1,7 +1,11 @@
+#include "address.hh"
+#include "exception.hh"
 #include "socket.hh"
 
+#include <format>
 #include <cstdlib>
 #include <iostream>
+#include <ostream>
 #include <span>
 #include <string>
 
@@ -9,8 +13,27 @@ using namespace std;
 
 void get_URL( const string& host, const string& path )
 {
-  cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
-  cerr << "Warning: get_URL() has not been implemented yet.\n";
+  const Address addr{host, "http"};
+  TCPSocket sock;
+  try {
+    sock.connect(addr);
+  } catch (const unix_error& e) {
+    cerr << "Connect to addr: " << addr.to_string() << ", failed due to: " << e.what() << endl;
+  }
+  sock.write(std::format("GET {} HTTP/1.1\r\n", path));
+  sock.write(std::format("Host: {}\r\n", host));
+  sock.write("Connection: close\r\n");
+  sock.write("\r\n");
+
+  
+  while (true) {
+    std::string buffer;
+    sock.read(buffer);
+    if (buffer.empty()) {
+      break;
+    }
+    cout << buffer;
+  }
 }
 
 int main( int argc, char* argv[] )
