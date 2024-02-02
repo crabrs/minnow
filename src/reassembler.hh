@@ -1,6 +1,11 @@
 #pragma once
 
 #include "byte_stream.hh"
+#include <cstdint>
+#include <functional>
+#include <list>
+#include <queue>
+#include <vector>
 
 class Reassembler
 {
@@ -41,5 +46,18 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
 private:
-  ByteStream output_; // the Reassembler writes to this ByteStream
+  struct Segment
+  {
+    uint64_t first_index;
+    std::string data;
+    bool is_last_substring;
+    bool operator>( const Segment& rhs ) const { return first_index > rhs.first_index; }
+  };
+
+private:
+  void try_flush_internal();
+  void merge_internal(Segment seg);
+private:
+  ByteStream output_;                       // the Reassembler writes to this ByteStream
+  std::list<Segment> unassembled_buffer_; // internal storage for unassembled bytes in stream
 };
